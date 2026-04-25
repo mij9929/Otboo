@@ -1,16 +1,103 @@
 # docker-compose-dev.yml
 services:
-  db:
-    image: postgres:15
-    container_name: otboo-db
-    environment:
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+  app-1:
+    image: otboo:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: otboo-app-1
     ports:
-      - "5432:5432"
-    volumes:
-      - db-data:/var/lib/postgresql/data
+      - "8081:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - INSTANCE_ID=app-1
+
+      - SPRING_ELASTICSEARCH_URIS=${SPRING_ELASTICSEARCH_URIS}
+      - SPRING_ELASTICSEARCH_USERNAME=${SPRING_ELASTICSEARCH_USERNAME}
+      - SPRING_ELASTICSEARCH_PASSWORD=${SPRING_ELASTICSEARCH_PASSWORD}
+
+      - JWT_SECRET=${JWT_SECRET}
+      - ACCESS_TOKEN_EXPIRATION=${ACCESS_TOKEN_EXPIRATION}
+      - REFRESH_TOKEN_EXPIRATION=${REFRESH_TOKEN_EXPIRATION}
+      - ISSUER=${ISSUER}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET}
+      - AWS_REGION=${AWS_REGION}
+      - KAKAO_REST_API_KEY=${KAKAO_REST_API_KEY}
+      - KMA_API_KEY=${KMA_API_KEY}
+
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+
+      - NAVER_MAIL_ID=${NAVER_MAIL_ID}
+      - NAVER_MAIL_PASSWORD=${NAVER_MAIL_PASSWORD}
+
+      - KAFKA_API_KEY=${KAFKA_API_KEY}
+      - KAFKA_API_SECRET=${KAFKA_API_SECRET}
+
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+
+      - SECURE=${SECURE}
+      - SAMESITE=${SAMESITE}
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+
+    depends_on:
+      - redis
+      - es
+      - kafka
+    restart: on-failure
+
+  app-2:
+    image: otboo:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: otboo-app-2
+    ports:
+      - "8082:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - INSTANCE_ID=app-2
+
+      - SPRING_ELASTICSEARCH_URIS=${SPRING_ELASTICSEARCH_URIS}
+      - SPRING_ELASTICSEARCH_USERNAME=${SPRING_ELASTICSEARCH_USERNAME}
+      - SPRING_ELASTICSEARCH_PASSWORD=${SPRING_ELASTICSEARCH_PASSWORD}
+
+      - JWT_SECRET=${JWT_SECRET}
+      - ACCESS_TOKEN_EXPIRATION=${ACCESS_TOKEN_EXPIRATION}
+      - REFRESH_TOKEN_EXPIRATION=${REFRESH_TOKEN_EXPIRATION}
+      - ISSUER=${ISSUER}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET}
+      - AWS_REGION=${AWS_REGION}
+      - KAKAO_REST_API_KEY=${KAKAO_REST_API_KEY}
+      - KMA_API_KEY=${KMA_API_KEY}
+
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+
+      - NAVER_MAIL_ID=${NAVER_MAIL_ID}
+      - NAVER_MAIL_PASSWORD=${NAVER_MAIL_PASSWORD}
+
+      - KAFKA_API_KEY=${KAFKA_API_KEY}
+      - KAFKA_API_SECRET=${KAFKA_API_SECRET}
+
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+
+      - SECURE=${SECURE}
+      - SAMESITE=${SAMESITE}
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+    depends_on:
+      - redis
+      - es
+      - kafka
+    restart: on-failure
 
   es:
     build:
@@ -47,8 +134,6 @@ services:
     command: redis-server --appendonly yes
 
 volumes:
-  db-data:
-    driver: local
   es-data:
     driver: local
   redis-data:
