@@ -31,4 +31,4 @@ EXPOSE 80
 ENV JVM_OPTS="-Xms512m -Xmx512m"
 
 # 5. 실행
-ENTRYPOINT ["sh", "-c", "java ${JVM_OPTS} -jar app.jar --spring.profiles.active=prod"]
+ENTRYPOINT ["sh", "-c", "java ${JVM_OPTS} -jar app.jar"]
