@@ -14,7 +14,7 @@ services:
     networks:
       - otboo-net
   app-1:
-    image: otboo:local
+    image: otboo-app-1:local
     build:
       context: .
       dockerfile: Dockerfile
@@ -63,7 +63,7 @@ services:
       - otboo-net
 
   app-2:
-    image: otboo:local
+    image: otboo-app-2:local
     build:
       context: .
       dockerfile: Dockerfile
@@ -252,4 +252,4 @@ volumes:
 
 networks:
   otboo-net:
-    external: true
+    driver: bridge
