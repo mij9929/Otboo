@@ -8,17 +8,21 @@ import org.springframework.stereotype.Component;
 @Component
 public class NotificationMapper {
 
-    public NotificationResponse toDto(NotificationDto notification) {
+    // 응답용
+    public NotificationResponse toDto(NotificationDto notificationDto) {
         return new NotificationResponse(
-            notification.id(),
-            notification.createdAt(),
-            notification.receiverId(),
-            notification.title(),
-            notification.content(),
-            notification.level()
+                notificationDto.id(),
+                notificationDto.createdAt(),
+                notificationDto.receiverId(),
+                notificationDto.title(),
+                notificationDto.content(),
+                notificationDto.level(),
+                notificationDto.notificationType(),
+                notificationDto.targetId()
         );
     }
 
+    // 내부 -> dto
     public NotificationDto toDto(Notification notification) {
         return NotificationDto.builder()
                 .id(notification.getId())
@@ -27,6 +31,8 @@ public class NotificationMapper {
                 .title(notification.getTitle())
                 .content(notification.getContent())
                 .level(notification.getLevel())
+                .notificationType(notification.getNotificationType())
+                .targetId(notification.getTargetId())
                 .build();
     }
 }
