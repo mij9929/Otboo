@@ -1,15 +1,20 @@
 package com.codeit.otboo.domain.sse.event;
 
+import com.codeit.otboo.domain.notification.dto.NotificationType;
 import lombok.Getter;
 
 import java.util.UUID;
 
 @Getter
 public class DirectMessageSseEvent extends BaseSseEvent {
-    private final UUID userId;
+    private final UUID receiverId;
+    private final UUID targetId;
+    private final NotificationType notificationType;
 
-    public DirectMessageSseEvent(String title, String content, UUID userId) {
+    public DirectMessageSseEvent(String title, String content, UUID receiverId, UUID targetId) {
         super(title, content);
-        this.userId = userId;
+        this.receiverId = receiverId;
+        this.targetId = targetId;
+        this.notificationType = NotificationType.DIRECT_MESSAGE;
     }
 }

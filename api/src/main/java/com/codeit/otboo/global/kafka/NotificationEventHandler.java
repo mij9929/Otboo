@@ -4,7 +4,6 @@ import com.codeit.otboo.domain.directmessage.dto.DirectMessageResponse;
 import com.codeit.otboo.domain.notification.dto.NotificationDto;
 import com.codeit.otboo.domain.notification.service.NotificationEventService;
 import com.codeit.otboo.domain.sse.event.*;
-import com.codeit.otboo.global.kafka.event.MultipleNotificationSseKafkaEvent;
 import com.codeit.otboo.global.kafka.event.NotificationBatchSseKafkaEvent;
 import com.codeit.otboo.global.kafka.event.NotificationSseKafkaEvent;
 import com.codeit.otboo.global.websocket.event.DirectMessageCreatedEvent;
@@ -48,9 +47,11 @@ public class NotificationEventHandler {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(DirectMessageSseEvent event) {
         NotificationDto notificationDto = notificationEventService.createSingleNotification(
-                event.getUserId(),
+                event.getReceiverId(),
                 event.getTitle(),
-                event.getContent()
+                event.getContent(),
+                event.getNotificationType(),
+                event.getTargetId()
         );
 
         kafkaEventPublisher.publish(
@@ -64,9 +65,11 @@ public class NotificationEventHandler {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(FollowSseEvent event) {
         NotificationDto notificationDto = notificationEventService.createSingleNotification(
-                event.getUserId(),
+                event.getReceiverId(),
                 event.getTitle(),
-                event.getContent()
+                event.getContent(),
+                event.getNotificationType(),
+                event.getTargetId()
         );
 
         kafkaEventPublisher.publish(
@@ -82,7 +85,9 @@ public class NotificationEventHandler {
         NotificationDto notificationDto = notificationEventService.createSingleNotification(
                 event.getReceiverId(),
                 event.getTitle(),
-                event.getContent()
+                event.getContent(),
+                event.getNotificationType(),
+                event.getTargetId()
         );
 
         kafkaEventPublisher.publish(
@@ -98,7 +103,9 @@ public class NotificationEventHandler {
         NotificationDto notificationDto = notificationEventService.createSingleNotification(
                 event.getReceiverId(),
                 event.getTitle(),
-                event.getContent()
+                event.getContent(),
+                event.getNotificationType(),
+                event.getTargetId()
         );
 
         kafkaEventPublisher.publish(
@@ -114,7 +121,9 @@ public class NotificationEventHandler {
         NotificationDto notificationDto = notificationEventService.createSingleNotification(
                 event.getReceiverId(),
                 event.getTitle(),
-                event.getContent()
+                event.getContent(),
+                event.getNotificationType(),
+                event.getTargetId()
         );
 
         kafkaEventPublisher.publish(
@@ -130,7 +139,9 @@ public class NotificationEventHandler {
         List<NotificationDto> notificationDtos = notificationEventService.createMultipleNotifications(
                 event.getReceiverIds(),
                 event.getTitle(),
-                event.getContent()
+                event.getContent(),
+                event.getNotificationType(),
+                event.getTargetId()
         );
 
         notificationDtos
@@ -150,7 +161,9 @@ public class NotificationEventHandler {
     public void on(ClothesAttributeDefSseEvent event) {
         List<NotificationDto> notificationDtos = notificationEventService.createMultipleNotificationAllByReceivers(
                 event.getTitle(),
-                event.getContent()
+                event.getContent(),
+                event.getNotificationType(),
+                event.getTargetId()
         );
 
         notificationDtos
