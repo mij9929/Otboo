@@ -55,4 +55,10 @@ public class FeedController implements FeedControllerDocs {
         feedService.deleteFeed(feedId, authorId);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/{feedId}")
+    public ResponseEntity<FeedResponse> getFeed(@PathVariable UUID feedId) {
+        FeedResponse feedResponse = feedService.getFeed(feedId);
+        return ResponseEntity.ok(feedResponse);
+    }
 }

@@ -239,4 +239,12 @@ public class FeedServiceImpl implements FeedService {
         return new CursorResponse<>(data, nextCursor, nextIdAfter,
                 feedPage.hasNext(), totalCount, condition.sortBy(), condition.sortDirection());
     }
+
+    @Override
+    public FeedResponse getFeed(UUID feedId) {
+        Feed feed = feedRepository.findById(feedId)
+                .orElseThrow(() -> new FeedNotFoundException(feedId));
+
+        return feedMapper.toDto(feed);
+    }
 }
