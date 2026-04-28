@@ -92,7 +92,7 @@ public class SseServiceImpl implements SseService {
         }
     }
 
-    @Scheduled(fixedDelay = 1000 * 60)
+    @Scheduled(fixedDelay = 1000 * 30)
     public void cleanUp() {
         sseEmitterRepository.findAll()
                 .stream()
