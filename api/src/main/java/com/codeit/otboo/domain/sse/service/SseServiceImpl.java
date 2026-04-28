@@ -50,20 +50,12 @@ public class SseServiceImpl implements SseService {
 
         Optional.ofNullable(lastEventId)
                 .ifPresentOrElse(
-                        id -> {
-                            sseMessageRepository.findAllByEventIdAfterAndReceiverId(id, receiverId)
-                                    .forEach(sseMessage -> {
-                                        try {
-                                            sseEmitter.send(sseMessage.toEvent());
-                                        } catch (IOException e) {
-                                            log.error(e.getMessage(), e);
-                                            sseEmitterRepository.delete(sseEmitter);
-                                        }
-                                    });
-                        },
-                        () -> {
-                            ping(sseEmitter);
-                        }
+                        id -> sseMessageRepository
+                                .findAllByEventIdAfterAndReceiverId(id, receiverId)
+                                .forEach(sseMessage ->
+                                        sendToEmitter(sseEmitter, sseMessage.toEvent())
+                                ),
+                        () -> ping(sseEmitter)
                 );
 
         return sseEmitter;
