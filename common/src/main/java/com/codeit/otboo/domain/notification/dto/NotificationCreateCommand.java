@@ -6,6 +6,8 @@ public record NotificationCreateCommand(
         UUID receiverId,
         String title,
         String content,
-        NotificationLevel level
+        NotificationLevel level,
+        NotificationType notificationType,
+        UUID targetId
 ) {
 }

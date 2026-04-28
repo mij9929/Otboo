@@ -10,6 +10,7 @@ import com.codeit.otboo.domain.follow.dto.FollowDto;
 import com.codeit.otboo.domain.follow.entity.Follow;
 import com.codeit.otboo.domain.notification.dto.NotificationDto;
 import com.codeit.otboo.domain.notification.dto.NotificationLevel;
+import com.codeit.otboo.domain.notification.dto.NotificationType;
 import com.codeit.otboo.domain.notification.entity.Notification;
 import com.codeit.otboo.domain.profile.dto.response.ProfileResponse;
 import com.codeit.otboo.domain.profile.entity.Gender;
@@ -153,17 +154,6 @@ public class TestFixture {
         );
     }
 
-    public Notification mockNotification(
-        String title,
-        String content,
-        NotificationLevel level,
-        User receiver,
-        LocalDateTime createdAt) {
-
-        Notification notification = new Notification(title, content, level, receiver);
-
-        return (Notification) setReflection(notification, createdAt);
-    }
 
     public Follow mockFollow(User follower, User followee, LocalDateTime createdAt) {
         Follow follow = new Follow(follower, followee);

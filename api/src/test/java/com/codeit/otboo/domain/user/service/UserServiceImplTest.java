@@ -520,10 +520,6 @@ class UserServiceImplTest {
             Role beforeRole = user.getRole(); // 기본값 User
             UserRoleUpdateRequest userRoleUpdateRequest = new UserRoleUpdateRequest(Role.ADMIN);
             UserResponse userResponse = UserResponseFixture.create(user, userRoleUpdateRequest.role());
-            SessionDeletedRequestEvent sessionDeletedRequestEvent = new SessionDeletedRequestEvent(
-                    userId,
-                    SessionInvalidationReason.ROLE_CHANGED);
-            UserRoleUpdatedEvent userRoleUpdatedEvent = new UserRoleUpdatedEvent("알림 제목", "알림 내용", userId);
             given(userRepository.findById(userId)).willReturn(Optional.of(user));
             given(userMapper.toDto(user)).willReturn(userResponse);
 

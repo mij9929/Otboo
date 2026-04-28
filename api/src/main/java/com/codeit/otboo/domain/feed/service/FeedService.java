@@ -17,4 +17,6 @@ public interface FeedService {
     FeedResponse updateFeed(UUID id, FeedUpdateRequest request, UUID authorId);
 
     void deleteFeed(UUID id, UUID authorId);
+
+    FeedResponse getFeed(UUID feedId);
 }

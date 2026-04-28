@@ -2,6 +2,7 @@ package com.codeit.otboo.domain.notification.entity;
 
 import com.codeit.otboo.domain.BaseEntity;
 import com.codeit.otboo.domain.notification.dto.NotificationLevel;
+import com.codeit.otboo.domain.notification.dto.NotificationType;
 import com.codeit.otboo.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -9,11 +10,12 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @Entity
 @Table(name = "notifications")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
-@Builder
 public class Notification extends BaseEntity {
 
     @Column(nullable = false, length = 100)
@@ -37,10 +39,31 @@ public class Notification extends BaseEntity {
     )
     private User receiver;
 
-    public Notification(String title, String content, NotificationLevel level, User receiver) {
+    @Column(name = "notification_type", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private NotificationType notificationType;
+
+    @Column(name = "target_id")
+    private UUID targetId;
+
+    @Builder
+    public Notification(String title, String content, NotificationLevel level, User receiver, NotificationType notificationType, UUID targetId) {
+        validateTarget(notificationType, targetId);
         this.title = title;
         this.content = content;
         this.level = level;
         this.receiver = receiver;
+        this.notificationType = notificationType;
+        this.targetId = targetId;
+    }
+
+    private static void validateTarget(NotificationType notificationType, UUID targetId) {
+        if (notificationType == null) {
+            throw new IllegalArgumentException("notificationType is required");
+        }
+
+        if (notificationType.requiresTarget() && targetId == null) {
+            throw new IllegalArgumentException("targetId is required");
+        }
     }
 }

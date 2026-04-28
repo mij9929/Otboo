@@ -106,7 +106,9 @@ public class NotificationServiceImpl implements NotificationService {
                 command.title(),
                 command.content(),
                 command.level(),
-                receiver
+                receiver,
+                command.notificationType(),
+                command.targetId()
         );
 
         return notificationRepository.save(notification);

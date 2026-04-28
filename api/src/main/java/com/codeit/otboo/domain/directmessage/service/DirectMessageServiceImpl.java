@@ -63,8 +63,9 @@ public class DirectMessageServiceImpl implements DirectMessageService {
         );
 
         String title = "[DM]" + response.sender().name();
+        UUID targetId = sender.getId();
 
-        eventPublisher.publishEvent(new DirectMessageSseEvent(title, response.content(), receiver.getId()));
+        eventPublisher.publishEvent(new DirectMessageSseEvent(title, response.content(), receiver.getId(), targetId));
 
         return response;
     }

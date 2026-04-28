@@ -48,7 +48,7 @@ public class LikeServiceImpl implements LikeService {
         String title = user.getProfile().getName() + "님이 내 피드를 좋아합니다.";
         String content = feed.getContent();
         UUID receiverId = feed.getAuthor().getId();
-        eventPublisher.publishEvent(new FeedLikedEvent(title, content, receiverId));
+        eventPublisher.publishEvent(new FeedLikedEvent(title, content, receiverId, feedId));
     }
 
     @Override

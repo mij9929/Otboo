@@ -492,4 +492,5 @@ ALTER TABLE likes ADD CONSTRAINT fk_likes_users FOREIGN KEY (user_id) REFERENCES
 -- Binary Table, 옷 속성 정의 테이블 컬럼 추가
 ALTER TABLE clothes_attribute_defs ADD COLUMN updated_at timestamp NULL;
 ALTER TABLE binary_contents ADD COLUMN updated_at timestamp NULL;
-
+ALTER TABLE notifications ADD COLUMN notification_type varchar(30) NOT NULL;
+ALTER TABLE notifications ADD COLUMN target_id UUID NULL

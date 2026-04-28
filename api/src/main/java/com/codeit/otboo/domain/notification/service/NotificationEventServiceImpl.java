@@ -3,6 +3,7 @@ package com.codeit.otboo.domain.notification.service;
 import com.codeit.otboo.domain.notification.dto.NotificationCreateCommand;
 import com.codeit.otboo.domain.notification.dto.NotificationDto;
 import com.codeit.otboo.domain.notification.dto.NotificationLevel;
+import com.codeit.otboo.domain.notification.dto.NotificationType;
 import com.codeit.otboo.domain.notification.entity.Notification;
 import com.codeit.otboo.domain.notification.mapper.NotificationMapper;
 import com.codeit.otboo.domain.user.service.UserService;
@@ -23,12 +24,14 @@ public class NotificationEventServiceImpl implements NotificationEventService { 
     // 단일 유저 간 알림 처리
     @Override
     @Transactional
-    public NotificationDto createSingleNotification(UUID userId, String title, String content) {
+    public NotificationDto createSingleNotification(UUID userId, String title, String content, NotificationType type, UUID targetId) {
         NotificationCreateCommand notificationCreateCommand = new NotificationCreateCommand(
                 userId,
                 title,
                 content,
-                NotificationLevel.INFO
+                NotificationLevel.INFO,
+                type,
+                targetId
         );
         Notification notification = notificationService.create(notificationCreateCommand);
         return notificationMapper.toDto(notification);
@@ -37,18 +40,18 @@ public class NotificationEventServiceImpl implements NotificationEventService { 
     // 다수의 유저 알림 처리
     @Override
     @Transactional
-    public List<NotificationDto> createMultipleNotifications(List<UUID> userIds, String title, String content) {
+    public List<NotificationDto> createMultipleNotifications(List<UUID> userIds, String title, String content, NotificationType type, UUID targetId) {
         return userIds.stream()
-                .map(userId -> createSingleNotification(userId, title, content))
+                .map(userId -> createSingleNotification(userId, title, content, type, targetId))
                 .toList();
     }
 
     // 전체 유저 알림 처리
     @Override
     @Transactional
-    public List<NotificationDto> createMultipleNotificationAllByReceivers(String title, String content) {
+    public List<NotificationDto> createMultipleNotificationAllByReceivers(String title, String content, NotificationType type, UUID targetId) {
         return userService.getAllUsers().stream()
-                .map(user -> createSingleNotification(user.getId(), title, content))
+                .map(user -> createSingleNotification(user.getId(), title, content, type, targetId))
                 .toList();
     }
 

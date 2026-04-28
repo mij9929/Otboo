@@ -92,7 +92,7 @@ public class FeedServiceImpl implements FeedService {
         String title = author.getProfile().getName() + "님이 새로운 피드를 작성했어요.";
         String content = feed.getContent();
         List<UUID> receiverIds = followerIds.stream().toList();
-        eventPublisher.publishEvent(new FeedCreatedEvent(title, content, receiverIds));
+        eventPublisher.publishEvent(new FeedCreatedEvent(title, content, receiverIds, feed.getId()));
 
         return feedMapper.toDto(feed);
     }
@@ -238,5 +238,13 @@ public class FeedServiceImpl implements FeedService {
 
         return new CursorResponse<>(data, nextCursor, nextIdAfter,
                 feedPage.hasNext(), totalCount, condition.sortBy(), condition.sortDirection());
+    }
+
+    @Override
+    public FeedResponse getFeed(UUID feedId) {
+        Feed feed = feedRepository.findById(feedId)
+                .orElseThrow(() -> new FeedNotFoundException(feedId));
+
+        return feedMapper.toDto(feed);
     }
 }

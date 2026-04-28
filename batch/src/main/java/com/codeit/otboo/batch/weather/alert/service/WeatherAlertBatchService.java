@@ -4,6 +4,7 @@ import com.codeit.otboo.batch.weather.alert.model.*;
 import com.codeit.otboo.batch.weather.alert.repository.AlertTargetQueryRepository;
 import com.codeit.otboo.domain.notification.dto.NotificationCreateCommand;
 import com.codeit.otboo.domain.notification.dto.NotificationLevel;
+import com.codeit.otboo.domain.notification.dto.NotificationType;
 import com.codeit.otboo.domain.weather.event.WeatherSseEvent;
 import com.codeit.otboo.domain.weather.entity.Weather;
 import com.codeit.otboo.domain.weather.entity.YesterdayHourlyWeather;
@@ -125,7 +126,9 @@ public class WeatherAlertBatchService {
                         userId,
                         "어제와 기온 차가 커요",
                         summary.content(),
-                        NotificationLevel.INFO
+                        NotificationLevel.INFO,
+                        NotificationType.WEATHER_ALERT,
+                        null
                 ))
                 .toList();
     }
@@ -147,7 +150,9 @@ public class WeatherAlertBatchService {
                         userId,
                         "오늘 강수 예보가 바뀌어요",
                         summary.content(),
-                        NotificationLevel.INFO
+                        NotificationLevel.INFO,
+                        NotificationType.WEATHER_ALERT,
+                        null
                 ))
                 .toList();
     }

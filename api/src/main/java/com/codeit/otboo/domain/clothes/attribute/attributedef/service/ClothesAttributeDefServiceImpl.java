@@ -207,6 +207,6 @@ public class ClothesAttributeDefServiceImpl implements ClothesAttributeDefServic
     }
 
     private void notificationEvent(String title, String content) {
-        eventPublisher.publishEvent(new ClothesAttributeDefSseEvent(title, content));
+        eventPublisher.publishEvent(new ClothesAttributeDefSseEvent(title, content, null));
     }
 }

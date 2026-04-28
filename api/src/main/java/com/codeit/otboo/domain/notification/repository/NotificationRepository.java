@@ -25,7 +25,9 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
             n.receiver.id,
             n.title,
             n.content,
-            n.level
+            n.level,
+            n.notificationType,
+            n.targetId
         )
         FROM Notification n
         WHERE (

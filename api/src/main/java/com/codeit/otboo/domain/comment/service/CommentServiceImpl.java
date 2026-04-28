@@ -53,7 +53,8 @@ public class CommentServiceImpl implements CommentService{
         String title = user.getProfile().getName() + "님이 댓글을 달았어요.";
         String content = comment.getContent();
         UUID receiverId = feed.getAuthor().getId();
-        eventPublisher.publishEvent(new CommentCreatedEvent(title, content, receiverId));
+        UUID targetId = feed.getId();
+        eventPublisher.publishEvent(new CommentCreatedEvent(title, content, receiverId, targetId));
 
         return commentMapper.toDto(comment);
     }

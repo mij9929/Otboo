@@ -18,6 +18,7 @@ import com.codeit.otboo.batch.weather.alert.service.WeatherAlertBatchService;
 import com.codeit.otboo.batch.weather.alert.service.WeatherAlertPolicyService;
 import com.codeit.otboo.domain.notification.dto.NotificationCreateCommand;
 import com.codeit.otboo.domain.notification.dto.NotificationLevel;
+import com.codeit.otboo.domain.notification.dto.NotificationType;
 import com.codeit.otboo.domain.weather.event.WeatherSseEvent;
 import com.codeit.otboo.domain.weather.entity.PrecipitationType;
 import com.codeit.otboo.domain.weather.entity.Weather;
@@ -409,13 +410,17 @@ class WeatherAlertBatchServiceTest {
                     alertTarget1.userId(),
                     "어제와 기온 차가 커요",
                     "오늘은 어제보다 전반적으로 3도 낮아요.",
-                    NotificationLevel.INFO
+                    NotificationLevel.INFO,
+                    NotificationType.WEATHER_ALERT,
+                    null
             );
             NotificationCreateCommand command2 = new NotificationCreateCommand(
                     alertTarget2.userId(),
                     "어제와 기온 차가 커요",
                     "오늘은 어제보다 전반적으로 3도 낮아요.",
-                    NotificationLevel.INFO
+                    NotificationLevel.INFO,
+                    NotificationType.WEATHER_ALERT,
+                    null
             );
 
             RegionAlertResult result = new RegionAlertResult(60, 127, List.of(command1, command2));

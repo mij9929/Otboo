@@ -236,7 +236,7 @@ public class UserServiceImpl implements UserService {
             ));
             String title = "내 권한이 변경되었어요.";
             String content = "내 권한이 [%s]에서 [%s]로 변경되었어요.".formatted(beforeRole, afterRole);
-            eventPublisher.publishEvent(new UserRoleUpdatedEvent(title, content, userId));
+            eventPublisher.publishEvent(new UserRoleUpdatedEvent(title, content, userId, null));
         }
         return userMapper.toDto(user);
     }
