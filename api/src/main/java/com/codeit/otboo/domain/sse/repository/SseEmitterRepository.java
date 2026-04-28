@@ -1,13 +1,11 @@
 package com.codeit.otboo.domain.sse.repository;
 
+import org.springframework.stereotype.Repository;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Repository;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @Repository
 public class SseEmitterRepository {
@@ -23,13 +21,10 @@ public class SseEmitterRepository {
         return emitter;
     }
 
-    public Optional<Set<SseEmitter>> findByReceiverId(UUID receiverId) {
-        return Optional.ofNullable(emittersByReceiverId.get(receiverId));
-    }
-
     public List<SseEmitter> findAllByReceiverIdsIn(Collection<UUID> receiverIds) {
         return receiverIds.stream()
                 .map(emittersByReceiverId::get)
+                .filter(Objects::nonNull)
                 .flatMap(Collection::stream)
                 .toList();
     }
