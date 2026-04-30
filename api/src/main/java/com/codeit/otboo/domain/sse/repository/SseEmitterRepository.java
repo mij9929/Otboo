@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.sse.repository;
 
+import com.codeit.otboo.domain.sse.object.SseMessage;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -26,10 +27,11 @@ public class SseEmitterRepository {
                 .map(emittersByReceiverId::get)
                 .filter(Objects::nonNull)
                 .flatMap(Collection::stream)
+                .distinct()
                 .toList();
     }
 
-    public List<SseEmitter> findAll () {
+    public List<SseEmitter> findAll() {
         return emittersByReceiverId.values().stream()
                 .flatMap(Collection::stream)
                 .toList();

@@ -8,10 +8,12 @@ import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter.DataWithMediaType;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class SseMessage {
 
@@ -40,10 +42,6 @@ public class SseMessage {
             eventName,
             eventData
         );
-    }
-
-    public boolean isReceivable(UUID receiverId) {
-        return broadcast || receiverIds.contains(receiverId);
     }
 
     public Set<DataWithMediaType> toEvent() {

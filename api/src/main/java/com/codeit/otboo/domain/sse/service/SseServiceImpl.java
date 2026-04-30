@@ -6,10 +6,7 @@ import com.codeit.otboo.domain.sse.repository.SseEmitterRepository;
 import com.codeit.otboo.domain.sse.repository.SseMessageRepository;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +27,7 @@ public class SseServiceImpl implements SseService {
     private final SseEmitterRepository sseEmitterRepository;
     private final SseMessageRepository sseMessageRepository;
 
+    @Override
     public SseEmitter connect(UUID receiverId, UUID lastEventId) {
         SseEmitter sseEmitter = new SseEmitter(timeout);
 
@@ -50,17 +48,41 @@ public class SseServiceImpl implements SseService {
 
         Optional.ofNullable(lastEventId)
                 .ifPresentOrElse(
-                        id -> sseMessageRepository
-                                .findAllByEventIdAfterAndReceiverId(id, receiverId)
-                                .forEach(sseMessage ->
-                                        sendToEmitter(sseEmitter, sseMessage.toEvent())
-                                ),
+                        id -> {
+                            SseMessageRepository.SseReplayResult replayResult =
+                                    sseMessageRepository.findReplayMessages(id, receiverId);
+
+                            if(!replayResult.lastEventFound()) {
+                                sendSyncRequiredEvent(sseEmitter);
+                                return;
+                            }
+
+                            replayResult.messages().forEach(sseMessage ->
+                                    sendToEmitter(sseEmitter, sseMessage.toEvent())
+                            );
+
+                            ping(sseEmitter);
+                        },
                         () -> ping(sseEmitter)
                 );
 
         return sseEmitter;
     }
 
+    private void sendSyncRequiredEvent(SseEmitter emitter) {
+        try {
+            emitter.send(SseEmitter.event()
+                    .name("sync-required")
+                    .data("SSE event cache missed. Please refetch notifications.")
+                    .build());
+        } catch (IOException e) {
+            log.debug("SSE sync-required event send failed.", e);
+            sseEmitterRepository.delete(emitter);
+            emitter.complete();
+        }
+    }
+
+    @Override
     public void send(Collection<UUID> receiverIds, String eventName, NotificationDto data) {
         SseMessage message = sseMessageRepository.save(
                 SseMessage.create(receiverIds, eventName, data)
@@ -72,6 +94,7 @@ public class SseServiceImpl implements SseService {
                 .forEach(sseEmitter -> sendToEmitter(sseEmitter, event));
     }
 
+    @Override
     public void broadcast(String eventName, NotificationDto data) {
         SseMessage message = sseMessageRepository.save(SseMessage.createBroadcast(eventName, data));
 
@@ -92,6 +115,7 @@ public class SseServiceImpl implements SseService {
         }
     }
 
+    @Override
     @Scheduled(fixedDelay = 1000 * 30)
     public void cleanUp() {
         sseEmitterRepository.findAll()
