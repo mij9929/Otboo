@@ -38,10 +38,12 @@ public class SseServiceImpl implements SseService {
         sseEmitter.onTimeout(() -> {
             log.debug("sse on onTimeout. receiverId = {}", receiverId);
             sseEmitterRepository.delete(sseEmitter);
+            sseEmitter.complete();
         });
         sseEmitter.onError((ex) -> {
             log.debug("sse on onError. receiverId = {}", receiverId, ex);
             sseEmitterRepository.delete(sseEmitter);
+            sseEmitter.complete();
         });
 
         sseEmitterRepository.save(receiverId, sseEmitter);
