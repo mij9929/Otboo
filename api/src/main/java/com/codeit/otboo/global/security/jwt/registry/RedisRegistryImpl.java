@@ -1,11 +1,14 @@
 package com.codeit.otboo.global.security.jwt.registry;
 
+import com.codeit.otboo.global.security.jwt.exception.JwtInvalidRefreshTokenException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -17,6 +20,31 @@ public class RedisRegistryImpl implements RedisRegistry {
 
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
+    private final DefaultRedisScript<Long> rotateScript = createRotateScript();
+
+    private DefaultRedisScript<Long> createRotateScript() {
+        DefaultRedisScript<Long> script = new DefaultRedisScript<>();
+        script.setResultType(Long.class);
+        script.setScriptText("""
+        local value = redis.call('get', KEYS[1])
+        if not value then
+            return 0
+        end
+        
+        local data = cjson.decode(value)
+        
+        if data.refreshToken ~= ARGV[1] then
+            return 0
+        end
+        
+        data.refreshToken = ARGV[2]
+        
+        redis.call('SET', KEYS[1], cjson.encode(data), 'EX', ARGV[3])
+        
+        return 1
+        """);
+        return script;
+    }
 
     @Override
     public void save(UUID userId, String sessionId, String refreshToken, long ttlSeconds) {
@@ -47,20 +75,18 @@ public class RedisRegistryImpl implements RedisRegistry {
 
     @Override
     public void rotateRefreshToken(UUID userId, String oldRefreshToken, String newRefreshToken, long ttlSeconds) {
-        UserInfo current = get(userId);
 
-        if (current == null || !oldRefreshToken.equals(current.refreshToken())) {
-            throw new IllegalStateException("현재 유효한 refresh token이 아닙니다.");
-        }
-
-        UserInfo updated = new UserInfo(current.sessionId(), newRefreshToken);
-
-        redisTemplate.opsForValue().set(
-                key(userId),
-                serialize(updated),
-                ttlSeconds,
-                TimeUnit.SECONDS
+        Long result = redisTemplate.execute(
+                rotateScript,
+                List.of(key(userId)),
+                oldRefreshToken,
+                newRefreshToken,
+                String.valueOf(ttlSeconds)
         );
+
+        if (result != 1L) {
+            throw new JwtInvalidRefreshTokenException(oldRefreshToken);
+        }
     }
 
     @Override
