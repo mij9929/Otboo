@@ -32,7 +32,6 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.ForwardedHeaderFilter;
 
 import java.util.List;
 
@@ -65,7 +64,6 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
-                                           ObjectMapper objectMapper,
                                            JwtAuthenticationFilter jwtAuthenticationFilter,
                                            RequestMdcFilter mdcFilter,
                                            Http401AuthenticationEntryPoint authenticationEntryPoint,
