@@ -83,8 +83,9 @@ info:
     version: 1.0.0
 
 sse:
-  event-queue-capacity: 100
-  timeout: 300_000
+  timeout: 600000
+  event-cache-capacity: 100
+  event-cache-ttl-seconds: 600
   
 api:
   kma-api-key: ${KMA_API_KEY}

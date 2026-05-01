@@ -10,6 +10,7 @@ import com.codeit.otboo.global.security.Http403ForbiddenAccessDeniedHandler;
 import com.codeit.otboo.global.security.SpaCsrfTokenRequestHandler;
 import com.codeit.otboo.global.security.jwt.JwtAuthenticationFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.DispatcherType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,7 +32,6 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.ForwardedHeaderFilter;
 
 import java.util.List;
 
@@ -64,7 +64,6 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
-                                           ObjectMapper objectMapper,
                                            JwtAuthenticationFilter jwtAuthenticationFilter,
                                            RequestMdcFilter mdcFilter,
                                            Http401AuthenticationEntryPoint authenticationEntryPoint,
@@ -77,6 +76,11 @@ public class SecurityConfig {
         http
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
+                        // Async 또는 Error 타입의 내부 요청은 인증/인가 체크를 하지 않고 통과
+                        .dispatcherTypeMatchers(
+                                DispatcherType.ASYNC,
+                                DispatcherType.ERROR
+                        ).permitAll() 
                         // PUBLIC
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers(HttpMethod.POST,"/api/auth/sign-in", "/api/auth/sign-out",

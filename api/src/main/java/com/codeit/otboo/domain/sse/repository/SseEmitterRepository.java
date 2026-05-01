@@ -1,57 +1,55 @@
 package com.codeit.otboo.domain.sse.repository;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import com.codeit.otboo.domain.sse.object.SseMessage;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 @Repository
 public class SseEmitterRepository {
+    private final ConcurrentMap<UUID, Set<SseEmitter>> emittersByReceiverId = new ConcurrentHashMap<>();
+    private final ConcurrentMap<SseEmitter, UUID> receiverIdByEmitter = new ConcurrentHashMap<>();
 
-    private final ConcurrentMap<UUID, List<SseEmitter>> data = new ConcurrentHashMap<>();
+    public SseEmitter save(UUID receiverId, SseEmitter emitter) {
+        emittersByReceiverId
+                .computeIfAbsent(receiverId, key -> ConcurrentHashMap.newKeySet())
+                .add(emitter);
 
-    public SseEmitter save(UUID receiverId, SseEmitter sseEmitter) {
-        data.compute(receiverId, (key, emitters) -> {
-            if (emitters == null) {
-                return new CopyOnWriteArrayList<>(List.of(sseEmitter));
-            } else {
-                emitters.add(sseEmitter);
-                return emitters;
-            }
-        });
-
-        return sseEmitter;
-    }
-
-    public Optional<List<SseEmitter>> findByReceiverId(UUID receiverId) {
-        return Optional.ofNullable(data.get(receiverId));
+        receiverIdByEmitter.put(emitter, receiverId);
+        return emitter;
     }
 
     public List<SseEmitter> findAllByReceiverIdsIn(Collection<UUID> receiverIds) {
-        return data.entrySet().stream()
-            .filter(entry -> receiverIds.contains(entry.getKey()))
-            .map(Map.Entry::getValue)
-            .flatMap(Collection::stream)
-            .toList();
+        return receiverIds.stream()
+                .map(emittersByReceiverId::get)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .distinct()
+                .toList();
     }
 
     public List<SseEmitter> findAll() {
-        return data.values().stream()
-            .flatMap(Collection::stream)
-            .toList();
+        return emittersByReceiverId.values().stream()
+                .flatMap(Collection::stream)
+                .toList();
     }
 
-    public void delete(UUID receiverId, SseEmitter sseEmitter) {
-        data.computeIfPresent(receiverId, (key, emitters) -> {
-            emitters.remove(sseEmitter);
+    public void delete(SseEmitter emitter) {
+        UUID receiverId = receiverIdByEmitter.remove(emitter);
+
+        if (receiverId == null) {
+            return;
+        }
+
+        removeFromReceiverMap(receiverId, emitter);
+    }
+
+    private void removeFromReceiverMap(UUID receiverId, SseEmitter emitter) {
+        emittersByReceiverId.computeIfPresent(receiverId, (key, emitters) -> {
+            emitters.remove(emitter);
             return emitters.isEmpty() ? null : emitters;
         });
     }
