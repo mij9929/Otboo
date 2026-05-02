@@ -65,6 +65,7 @@ public class JwtProvider {
                 .claim(TOKEN_TYPE, ACCESS)
                 .claim("email", email)
                 .claim("sessionId", sessionId)
+                .claim("jti", UUID.randomUUID().toString())
                 .build();
 
         return sign(claimsSet);
@@ -83,6 +84,7 @@ public class JwtProvider {
                 .claim(TOKEN_TYPE, REFRESH)
                 .claim("email", email)
                 .claim("sessionId", sessionId)
+                .claim("jti", UUID.randomUUID().toString())
                 .build();
 
         return sign(claimsSet);
