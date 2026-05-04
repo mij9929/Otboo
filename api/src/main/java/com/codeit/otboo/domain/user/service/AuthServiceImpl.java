@@ -16,10 +16,12 @@ import com.codeit.otboo.global.security.jwt.JwtProperties;
 import com.codeit.otboo.global.security.jwt.dto.JwtInformation;
 import com.codeit.otboo.global.security.jwt.JwtProvider;
 import com.codeit.otboo.global.security.jwt.exception.JwtExpiredTokenException;
+import com.codeit.otboo.global.security.jwt.exception.JwtInvalidRefreshTokenException;
 import com.codeit.otboo.global.security.jwt.registry.RedisRegistry;
 import com.nimbusds.jwt.JWTClaimsSet;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.RedisSystemException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.LockedException;
@@ -117,11 +119,6 @@ public class AuthServiceImpl implements AuthService {
         JWTClaimsSet claims = jwtProvider.validateRefreshToken(refreshToken);
         UUID userId = UUID.fromString(claims.getSubject());
 
-        // Redis에 저장된 user의 refresh Token 비교
-        if (!redisRegistry.isValidRefreshToken(userId, refreshToken)) {
-            throw new JwtExpiredTokenException();
-        }
-
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
@@ -132,8 +129,9 @@ public class AuthServiceImpl implements AuthService {
 
         try {
             redisRegistry.rotateRefreshToken(userId, refreshToken, newRefreshToken, jwtProperties.refreshTokenExpiration());
-        } catch (Exception e) {
-            redisRegistry.delete(userId);
+        } catch (JwtInvalidRefreshTokenException e) {
+            throw e;
+        } catch (RedisSystemException | IllegalStateException e) {
             throw new AuthStatePersistentException();
         }
 

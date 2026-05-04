@@ -67,6 +67,7 @@ public enum ErrorCode {
     INVALID_ISSUER("JWT issuer 불일치"),
     INVALID_TOKEN_TYPE("JWT 타입 불일치"),
     PARSE_ERROR("JWT 파싱 실패"),
+    AUTH_REFRESH_TOKEN_MISMATCH("Refresh 토큰이 일치하지 않습니다."),
 
     // Validation
     VALIDATION_ERROR("유효성 검사에 실패하였습니다."),
