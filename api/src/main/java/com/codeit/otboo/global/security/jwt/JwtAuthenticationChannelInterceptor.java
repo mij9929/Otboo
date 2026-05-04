@@ -39,6 +39,10 @@ public class JwtAuthenticationChannelInterceptor implements ChannelInterceptor {
         );
 
         try {
+            if(accessor == null) {
+                return message;
+            }
+
             if (StompCommand.CONNECT.equals(accessor.getCommand())) {
 
                 String accessToken = resolveToken(accessor).orElseThrow(JwtInvalidTokenTypeException::new);
