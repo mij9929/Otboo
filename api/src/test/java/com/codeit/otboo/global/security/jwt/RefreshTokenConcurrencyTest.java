@@ -1,12 +1,16 @@
 package com.codeit.otboo.global.security.jwt;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import com.codeit.otboo.domain.feed.elasticsearch.repository.FeedDocumentRepository;
 import com.codeit.otboo.domain.profile.entity.Profile;
 import com.codeit.otboo.domain.user.entity.User;
 import com.codeit.otboo.domain.user.repository.UserRepository;
 import com.codeit.otboo.domain.user.service.AuthService;
+import com.codeit.otboo.domain.user.service.AuthServiceImpl;
 import com.codeit.otboo.global.security.jwt.dto.JwtInformation;
 import com.codeit.otboo.global.security.jwt.exception.JwtInvalidRefreshTokenException;
 import com.codeit.otboo.global.security.jwt.registry.RedisRegistry;
+import com.codeit.otboo.global.security.jwt.registry.RedisRegistryImpl;
 import com.codeit.otboo.global.security.jwt.registry.UserInfo;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.AfterEach;
@@ -15,8 +19,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.RepeatedTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,6 +49,13 @@ class RefreshTokenConcurrencyTest {
     UserRepository userRepository;
     @Autowired
     JwtProperties jwtProperties;
+
+    @MockitoBean
+    ElasticsearchOperations elasticsearchOperations;
+    @MockitoBean
+    ElasticsearchClient elasticsearchClient;
+    @MockitoBean
+    FeedDocumentRepository feedDocumentRepository;
 
     private UUID userId;
 
