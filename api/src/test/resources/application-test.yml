@@ -36,6 +36,11 @@ spring:
       security.protocol: PLAINTEXT
       sasl.mechanism: PLAIN
 
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
 secure:
   cookie: false
   sameSite: Lax
