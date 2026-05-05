@@ -18,7 +18,6 @@ import com.codeit.otboo.global.security.OtbooUserDetails;
 import com.codeit.otboo.global.security.jwt.JwtProperties;
 import com.codeit.otboo.global.security.jwt.JwtProvider;
 import com.codeit.otboo.global.security.jwt.dto.JwtInformation;
-import com.codeit.otboo.global.security.jwt.exception.JwtExpiredTokenException;
 import com.codeit.otboo.global.security.jwt.registry.RedisRegistry;
 import com.nimbusds.jwt.JWTClaimsSet;
 import org.junit.jupiter.api.BeforeEach;
@@ -394,7 +393,6 @@ class AuthServiceImplTest {
             UserResponse userResponse = UserResponseFixture.create(user);
 
             given(jwtProvider.validateRefreshToken(refreshToken)).willReturn(claimsSet);
-            given(redisRegistry.isValidRefreshToken(userId, refreshToken)).willReturn(true);
             given(userRepository.findById(userId)).willReturn(Optional.of(user));
             given(jwtProvider.getSessionId(refreshToken)).willReturn(sessionId);
             given(jwtProvider.getEmail(refreshToken)).willReturn(email);
@@ -413,7 +411,6 @@ class AuthServiceImplTest {
             assertThat(result.userResponse()).isEqualTo(userResponse);
 
             then(jwtProvider).should().validateRefreshToken(refreshToken);
-            then(redisRegistry).should().isValidRefreshToken(userId, refreshToken);
             then(userRepository).should().findById(userId);
             then(redisRegistry).should()
                     .rotateRefreshToken(userId, refreshToken, newRefreshToken, refreshTokenExpiration);
@@ -427,30 +424,13 @@ class AuthServiceImplTest {
             // given
             String refreshToken = "invalid-refresh-token";
             given(jwtProvider.validateRefreshToken(refreshToken)).willReturn(claimsSet);
-            given(redisRegistry.isValidRefreshToken(userId, refreshToken)).willReturn(true);
             given(userRepository.findById(userId)).willReturn(Optional.empty());
 
             // when & then
             assertThatThrownBy(() -> authService.refreshToken(refreshToken))
                     .isInstanceOf(UserNotFoundException.class);
 
-            then(redisRegistry).should().isValidRefreshToken(userId, refreshToken);
             then(userRepository).should().findById(userId);
-            then(jwtProvider).shouldHaveNoMoreInteractions();
-        }
-
-        @Test
-        @DisplayName("존재하지 않는 (Redis에 없는) Refresh 토큰이면 예외 발생")
-        void refreshToken_fail_notExistRefresh() {
-            // given
-            given(jwtProvider.validateRefreshToken(refreshToken)).willReturn(claimsSet);
-            given(redisRegistry.isValidRefreshToken(userId, refreshToken)).willReturn(false);
-
-            // when & then
-            assertThatThrownBy(() -> authService.refreshToken(refreshToken))
-                    .isInstanceOf(JwtExpiredTokenException.class);
-
-            then(userRepository).shouldHaveNoInteractions();
             then(jwtProvider).shouldHaveNoMoreInteractions();
         }
 
@@ -461,14 +441,13 @@ class AuthServiceImplTest {
             User user = UserFixture.create(userId, email, password);
 
             given(jwtProvider.validateRefreshToken(refreshToken)).willReturn(claimsSet);
-            given(redisRegistry.isValidRefreshToken(userId, refreshToken)).willReturn(true);
             given(userRepository.findById(userId)).willReturn(Optional.of(user));
             given(jwtProvider.getSessionId(refreshToken)).willReturn(sessionId);
             given(jwtProvider.getEmail(refreshToken)).willReturn(email);
             given(jwtProvider.generateRefreshToken(userId, email, sessionId)).willReturn(newRefreshToken);
             given(jwtProperties.refreshTokenExpiration()).willReturn(refreshTokenExpiration);
 
-            willThrow(new RuntimeException("redis rotate fail"))
+            willThrow(new IllegalStateException("redis rotate fail"))
                     .given(redisRegistry)
                     .rotateRefreshToken(userId, refreshToken, newRefreshToken, refreshTokenExpiration);
 
@@ -476,7 +455,6 @@ class AuthServiceImplTest {
             assertThatThrownBy(() -> authService.refreshToken(refreshToken))
                     .isInstanceOf(AuthStatePersistentException.class);
 
-            then(redisRegistry).should().delete(userId);
             then(jwtProvider).should(never()).generateAccessToken(any(), any(), any());
         }
     }
