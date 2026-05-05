@@ -17,6 +17,13 @@ jobs:
       issues: write
 
     steps:
+      - name: Wait for CI to succeed
+        uses: fountainhead/action-wait-for-check@v1.2.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: CI Test Job
+          ref: ${{ github.sha }}
+
       - name: Checkout code
         uses: actions/checkout@v4
         with:
