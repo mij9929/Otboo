@@ -21,8 +21,8 @@ jobs:
         uses: fountainhead/action-wait-for-check@v1.2.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          checkName: CI - Test and Update Badge
-          ref: ${{ github.sha }}
+          checkName: CI Test Job
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Checkout code
         uses: actions/checkout@v4
