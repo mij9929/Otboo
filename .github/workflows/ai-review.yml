@@ -106,9 +106,9 @@ jobs:
             const marker = '<!-- ai-code-reviewer -->';
             const chunkDir = 'diff_chunks';
 
-            const MAX_CHUNKS = 4;
-            const MAX_LINE_COMMENTS = 3;
-
+            const MAX_CHUNKS = 3;
+            const MAX_LINE_COMMENTS = 2;
+            
             function sleep(ms) {
               return new Promise(resolve => setTimeout(resolve, ms));
             }
@@ -144,6 +144,14 @@ jobs:
                 .filter(line => !line.match(/^\+import\s+/))
                 .filter(line => !line.match(/^-import\s+/))
                 .join('\n');
+            }
+            
+            function truncateDiff(diff, maxChars = 12000) {
+              if (diff.length <= maxChars) {
+                return diff;
+              }
+            
+              return diff.slice(0, maxChars) + '\n\n[diff truncated]';
             }
 
             function extractChangedLines(diff) {
@@ -220,8 +228,9 @@ jobs:
                 })
               });
 
-              if (response.status === 429 && retry < 2) {
-                await sleep(5000 * (retry + 1));
+              if (response.status === 429 && retry < 4) {
+                const wait = 4000 * (retry + 1);
+                await sleep(wait);
                 return requestGroq(messages, maxTokens, retry + 1);
               }
 
@@ -335,8 +344,10 @@ jobs:
                 const parsed = JSON.parse(jsonText);
                 return Array.isArray(parsed.comments) ? parsed.comments : [];
               } catch {
-                return [];
-              }
+                  core.warning('Failed to parse inline comments JSON');
+                  core.warning(raw);
+                  return [];
+                }
             }
 
             async function requestFinalSummary(reviews) {
@@ -362,13 +373,20 @@ jobs:
                 }
               ], 1400);
             }
+            
+            function extractOriginalName(fileName) {
+              return fileName.replace(/^chunk_\d+_/, '');
+            }
 
             const allDiffFiles = fs.readdirSync(chunkDir)
               .filter(name => name.endsWith('.diff'))
               .sort((a, b) => {
-                const score = priorityScore(a) - priorityScore(b);
-                return score !== 0 ? score : a.localeCompare(b);
-              });
+              const score =
+              priorityScore(extractOriginalName(a)) -
+              priorityScore(extractOriginalName(b));
+              
+              return score !== 0 ? score : a.localeCompare(b);
+            });
 
             const selectedFiles = allDiffFiles.slice(0, MAX_CHUNKS);
             const changedLines = mergeChangedLines(selectedFiles);
@@ -378,21 +396,32 @@ jobs:
 
             for (let i = 0; i < selectedFiles.length; i++) {
               const filePath = path.join(chunkDir, selectedFiles[i]);
+            
               const rawDiff = fs.readFileSync(filePath, 'utf8');
-              const diff = cleanDiff(rawDiff);
-
-              if (diff.trim().length === 0) {
-                core.info(`No reviewable diff after cleaning: ${selectedFiles[i]}`);
-                continue;
-              }
-
-              const review = await requestChunkReview(diff, i + 1, selectedFiles.length);
+            
+              const cleanedDiff = cleanDiff(rawDiff);
+              const truncatedDiff = truncateDiff(cleanedDiff);
+            
+              if (cleanedDiff.trim().length === 0) {
+              core.info(`No reviewable diff after cleaning: ${selectedFiles[i]}`);
+              continue;
+            }
+            
+              const review = await requestChunkReview(
+              truncatedDiff,
+              i + 1,
+              selectedFiles.length
+              );
+            
               reviews.push(`## Review ${i + 1}: ${selectedFiles[i]}\n\n${review}`);
-
-              const candidates = await requestInlineComments(diff);
+            
+              // 라인 코멘트는 truncate
+              if (i < 2) {
+              const candidates = await requestInlineComments(rawDiff);
               inlineCommentCandidates.push(...candidates);
+            }
 
-              await sleep(2500);
+              await sleep(4000);
             }
             
             if (reviews.length === 0) {
