@@ -1,4 +1,4 @@
-package com.codeit.otboo.domain.clothes.recommendation.service;
+package com.codeit.otboo.domain.clothes.recommendation.service.type;
 
 import java.util.Arrays;
 import java.util.List;
