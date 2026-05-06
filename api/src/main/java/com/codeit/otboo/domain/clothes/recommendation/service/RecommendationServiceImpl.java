@@ -8,6 +8,10 @@ import com.codeit.otboo.domain.clothes.management.entity.ClothesType;
 import com.codeit.otboo.domain.clothes.management.mapper.ClothesMapper;
 import com.codeit.otboo.domain.clothes.management.repository.ClothesRepository;
 import com.codeit.otboo.domain.clothes.recommendation.dto.response.RecommendationResponse;
+import com.codeit.otboo.domain.clothes.recommendation.service.type.DressType;
+import com.codeit.otboo.domain.clothes.recommendation.service.type.OuterType;
+import com.codeit.otboo.domain.clothes.recommendation.service.type.ShoesType;
+import com.codeit.otboo.domain.clothes.recommendation.service.type.TopType;
 import com.codeit.otboo.domain.profile.entity.Profile;
 import com.codeit.otboo.domain.profile.exception.ProfileNotFoundException;
 import com.codeit.otboo.domain.profile.repository.ProfileRepository;
@@ -25,6 +29,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@org.springframework.context.annotation.Profile("legacy")
 @Slf4j
 public class RecommendationServiceImpl implements RecommendationService {
 
