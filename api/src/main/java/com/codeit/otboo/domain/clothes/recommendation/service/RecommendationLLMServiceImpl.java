@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.clothes.recommendation.service;
 
+import com.codeit.otboo.domain.clothes.recommendation.dto.internal.LlmRecommendationRequest;
 import com.codeit.otboo.domain.clothes.recommendation.dto.internal.OutfitCandidate;
 import com.codeit.otboo.domain.clothes.recommendation.dto.internal.RecommendationContext;
 import com.codeit.otboo.domain.clothes.recommendation.dto.response.RecommendationResponse;
@@ -28,6 +29,8 @@ public class RecommendationLLMServiceImpl implements RecommendationService {
                 .toList();
 
         log.debug("candidates : {}", candidates );
+
+        LlmRecommendationRequest llmRecommendationRequest = LlmRecommendationRequest.from(context, candidates);
 
         return RecommendationResponse.builder()
                 .weatherId(weatherId)
