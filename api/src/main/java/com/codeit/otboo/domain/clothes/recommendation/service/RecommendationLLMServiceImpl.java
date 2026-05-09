@@ -1,6 +1,8 @@
 package com.codeit.otboo.domain.clothes.recommendation.service;
 
+import com.codeit.otboo.domain.clothes.recommendation.ai.LlmRecommendationClient;
 import com.codeit.otboo.domain.clothes.recommendation.dto.internal.LlmRecommendationRequest;
+import com.codeit.otboo.domain.clothes.recommendation.dto.internal.LlmRecommendationResponse;
 import com.codeit.otboo.domain.clothes.recommendation.dto.internal.OutfitCandidate;
 import com.codeit.otboo.domain.clothes.recommendation.dto.internal.RecommendationContext;
 import com.codeit.otboo.domain.clothes.recommendation.dto.response.RecommendationResponse;
@@ -17,6 +19,7 @@ import java.util.UUID;
 @Slf4j
 public class RecommendationLLMServiceImpl implements RecommendationService {
     private final RecommendationContextLoader contextLoader;
+    private final LlmRecommendationClient llmRecommendationClient;
 
     @Override
     @Transactional(readOnly = true)
@@ -31,6 +34,10 @@ public class RecommendationLLMServiceImpl implements RecommendationService {
         log.debug("candidates : {}", candidates );
 
         LlmRecommendationRequest llmRecommendationRequest = LlmRecommendationRequest.from(context, candidates);
+        log.debug("llmRecommendationRequest : {}", llmRecommendationRequest );
+
+        LlmRecommendationResponse llmRecommendationResponse = llmRecommendationClient.recommend(llmRecommendationRequest);
+        log.debug("llmRecommendationResponse : {}", llmRecommendationResponse );
 
         return RecommendationResponse.builder()
                 .weatherId(weatherId)
