@@ -1,5 +1,6 @@
 package com.codeit.otboo.domain.clothes.recommendation.service;
 
+import com.codeit.otboo.domain.clothes.management.entity.Clothes;
 import com.codeit.otboo.domain.clothes.recommendation.ai.LlmRecommendationClient;
 import com.codeit.otboo.domain.clothes.recommendation.dto.internal.LlmRecommendationRequest;
 import com.codeit.otboo.domain.clothes.recommendation.dto.internal.LlmRecommendationResponse;
@@ -20,6 +21,9 @@ import java.util.UUID;
 public class RecommendationLLMServiceImpl implements RecommendationService {
     private final RecommendationContextLoader contextLoader;
     private final LlmRecommendationClient llmRecommendationClient;
+    private final LlmRecommendationValidator llmRecommendationValidator;
+    private final RecommendationResponseAssembler responseAssembler;
+    private final FallbackOutFitRecommender fallbackOutFitRecommender;
 
     @Override
     @Transactional(readOnly = true)
@@ -33,17 +37,32 @@ public class RecommendationLLMServiceImpl implements RecommendationService {
 
         log.debug("candidates : {}", candidates );
 
-        LlmRecommendationRequest llmRecommendationRequest = LlmRecommendationRequest.from(context, candidates);
-        log.debug("llmRecommendationRequest : {}", llmRecommendationRequest );
+        List<Clothes> selectedClothes;
 
-        LlmRecommendationResponse llmRecommendationResponse = llmRecommendationClient.recommend(llmRecommendationRequest);
-        log.debug("llmRecommendationResponse : {}", llmRecommendationResponse );
+        try{
+            LlmRecommendationRequest llmRecommendationRequest = LlmRecommendationRequest.from(context, candidates);
+            log.debug("llmRecommendationRequest : {}", llmRecommendationRequest );
 
-        return RecommendationResponse.builder()
-                .weatherId(weatherId)
-                .userId(userId)
-                .clothes(List.of())
-                .build();
+            LlmRecommendationResponse llmRecommendationResponse = llmRecommendationClient.recommend(llmRecommendationRequest);
+            log.debug("llmRecommendationResponse : {}", llmRecommendationResponse);
+
+            selectedClothes =
+                    llmRecommendationValidator.validate(
+                            llmRecommendationResponse,
+                            context.clothes()
+                    );
+
+        } catch (RuntimeException e) {
+            log.warn("LLM 추천 실패 - Fallback 처리, userId = {}, weatherId = {}", userId, weatherId, e);
+            selectedClothes = fallbackOutFitRecommender.recommend(context.clothes());
+        }
+
+
+        return responseAssembler.assemble(
+                weatherId,
+                userId,
+                selectedClothes
+        );
 
     }
 }
