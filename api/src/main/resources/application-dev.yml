@@ -73,11 +73,18 @@ management:
 
 otboo:
   jwt:
-    secret: mySecretKeyForJwtTokenGeneration1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
-    access-token-expiration: 900000
-    refresh-token-expiration: 1209600000
-    issuer: codeit
+    secret: ${JWT_SECRET}
+    access-token-expiration: ${ACCESS_TOKEN_EXPIRATION}
+    refresh-token-expiration: ${REFRESH_TOKEN_EXPIRATION}
+    issuer: ${ISSUER}
   account:
     email: admin@codeit.com
     name: admin
     password: admin12
+  recommendation:
+    llm:
+      provider: gemini
+      base-url: https://openrouter.ai/api/v1
+      api-key: ${RECOMMENDATION_LLM_API_KEY}
+      model: google/gemini-2.0-flash-exp:free
+      timeout: 10
