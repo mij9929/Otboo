@@ -3,11 +3,13 @@ package com.codeit.otboo.domain.clothes.recommendation.service;
 import com.codeit.otboo.domain.clothes.management.entity.Clothes;
 import com.codeit.otboo.domain.clothes.management.entity.ClothesType;
 import com.codeit.otboo.domain.weather.entity.Weather;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Component
 public class RecommendationCandidateFilter {
     private static final int TOP_LIMIT = 10;
     private static final int BOTTOM_LIMIT = 10;
