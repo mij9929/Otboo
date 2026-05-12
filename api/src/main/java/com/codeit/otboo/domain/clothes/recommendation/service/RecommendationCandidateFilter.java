@@ -21,7 +21,8 @@ public class RecommendationCandidateFilter {
                 .collect(Collectors.groupingBy(Clothes::getType));
 
         return grouped.entrySet().stream()
-                .flatMap(entry -> entry.getValue().stream())
+                .flatMap(entry -> entry.getValue().stream()
+                        .limit(limitByType(entry.getKey())))
                 .toList();
     }
 
