@@ -24,14 +24,18 @@ public class RecommendationLLMServiceImpl implements RecommendationService {
     private final LlmRecommendationValidator llmRecommendationValidator;
     private final RecommendationResponseAssembler responseAssembler;
     private final FallbackOutFitRecommender fallbackOutFitRecommender;
+    private final RecommendationCandidateFilter recommendationCandidateFilter;
 
     @Override
     @Transactional(readOnly = true)
     public RecommendationResponse recommend(UUID weatherId, UUID userId) {
         RecommendationContext context = contextLoader.load(weatherId, userId);
 
+        List<Clothes> candidateClothes = recommendationCandidateFilter
+                .filter(context.clothes(), context.weather());
+
         List<OutfitCandidate> candidates
-                = context.clothes().stream()
+                = candidateClothes.stream()
                 .map(OutfitCandidate::from)
                 .toList();
 
@@ -49,14 +53,13 @@ public class RecommendationLLMServiceImpl implements RecommendationService {
             selectedClothes =
                     llmRecommendationValidator.validate(
                             llmRecommendationResponse,
-                            context.clothes()
+                            candidateClothes
                     );
 
         } catch (RuntimeException e) {
             log.warn("LLM 추천 실패 - Fallback 처리, userId = {}, weatherId = {}", userId, weatherId, e);
             selectedClothes = fallbackOutFitRecommender.recommend(context.clothes());
         }
-
 
         return responseAssembler.assemble(
                 weatherId,
