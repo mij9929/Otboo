@@ -13,7 +13,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Component
 @RequiredArgsConstructor
 public class OpenRouterLlmRecommendationClient implements LlmRecommendationClient{
-    private final WebClient.Builder webClientBuilder;
+    private final WebClient llmWebClient;
     private final LlmRecommendationProperties properties;
     private final LlmRecommendationPromptBuilder promptBuilder;
     private final LlmRecommendationResponseParser responseParser;
@@ -26,12 +26,9 @@ public class OpenRouterLlmRecommendationClient implements LlmRecommendationClien
         OpenRouterChatRequest chatRequest =
                 OpenRouterChatRequest.of(properties.model(), prompt);
 
-        OpenRouterChatResponse chatResponse = webClientBuilder
-                .baseUrl(properties.baseUrl())
-                .build()
+        OpenRouterChatResponse chatResponse = llmWebClient
                 .post()
                 .uri("/chat/completions")
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + properties.apiKey())
                 .bodyValue(chatRequest)
                 .retrieve()
                 .bodyToMono(OpenRouterChatResponse.class)
