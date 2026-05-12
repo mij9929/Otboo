@@ -60,6 +60,13 @@ otboo:
     email: dummy
     name: dummy
     password: dummy
+  recommendation:
+    llm:
+      provider: dummy
+      base-url: dummy
+      api-key: dummy
+      model: dummy
+      timeout: 10
 
 api:
   kma-api-key: dummyKey
