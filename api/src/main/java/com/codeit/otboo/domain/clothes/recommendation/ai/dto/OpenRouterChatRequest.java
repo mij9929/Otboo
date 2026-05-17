@@ -1,7 +1,6 @@
 package com.codeit.otboo.domain.clothes.recommendation.ai.dto;
 
 import java.util.List;
-import java.util.Map;
 
 public record OpenRouterChatRequest(
         String model,
