@@ -6,12 +6,15 @@ import com.codeit.otboo.domain.clothes.recommendation.dto.internal.LlmRecommenda
 import com.codeit.otboo.domain.clothes.recommendation.dto.internal.LlmRecommendationResponse;
 import com.codeit.otboo.domain.clothes.recommendation.exception.InvalidLlmRecommendationResponseException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class OpenRouterLlmRecommendationClient implements LlmRecommendationClient{
     private final WebClient llmWebClient;
     private final LlmRecommendationProperties properties;
@@ -31,6 +34,13 @@ public class OpenRouterLlmRecommendationClient implements LlmRecommendationClien
                 .uri("/chat/completions")
                 .bodyValue(chatRequest)
                 .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, clientResponse ->
+                        clientResponse.bodyToMono(String.class)
+                                .map(body -> {
+                                    log.warn("Open Router API ERROR. status = {}, body = {}", clientResponse.statusCode(), body);
+                                    return new IllegalArgumentException("Open Router API ERROR: \n" + body + "\n");
+                                })
+                        )
                 .bodyToMono(OpenRouterChatResponse.class)
                 .block();
 

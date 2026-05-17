@@ -5,8 +5,7 @@ import java.util.Map;
 
 public record OpenRouterChatRequest(
         String model,
-        List<Message> messages,
-        Map<String, String> response_format
+        List<Message> messages
 ) {
 
     public static OpenRouterChatRequest of(String model, String prompt) {
@@ -18,8 +17,7 @@ public record OpenRouterChatRequest(
                                 "You are a fashion recommendation assistant. Return JSON only."
                         ),
                         new Message("user", prompt)
-                ),
-                Map.of("type", "json_object")
+                )
         );
     }
 

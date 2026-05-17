@@ -83,8 +83,8 @@ otboo:
     password: admin12
   recommendation:
     llm:
-      provider: gemini
+      provider: openrouter
       base-url: https://openrouter.ai/api/v1
       api-key: ${RECOMMENDATION_LLM_API_KEY}
-      model: google/gemini-2.0-flash-exp:free
-      timeout: 10
+      model: openrouter/free
+      timeout-seconds: 10
