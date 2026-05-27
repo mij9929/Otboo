@@ -15,6 +15,11 @@ import java.util.stream.Collectors;
  */
 public class FallbackOutFitRecommender {
     public List<Clothes> recommend(List<Clothes> clothes) {
+
+        if (clothes == null || clothes.isEmpty()) {
+            return List.of();
+        }
+
         Map<ClothesType, List<Clothes>> clothesMap = clothes.stream()
                 .collect(Collectors.groupingBy(Clothes::getType));
 

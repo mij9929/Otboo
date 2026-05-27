@@ -22,7 +22,7 @@ public class LlmRecommendationValidator {
 
         if(selectedClothesIds == null || selectedClothesIds.isEmpty()) {
             log.debug("LLM 리스트 결과가 비어있음.");
-            throw new IllegalArgumentException("LLM 리스트 결과가 비어있음.");
+            throw new IllegalArgumentException("LLM 리스트 결과가 비어있음. selectedIds = " + selectedClothesIds);
         }
 
         boolean hasInvalidId = selectedClothesIds.stream()
