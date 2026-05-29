@@ -110,6 +110,8 @@ class RefreshTokenConcurrencyTest {
                 jwtProperties.refreshTokenExpiration()
         );
 
+        Thread.sleep(1100);
+
         int threadCount = 2;
         ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
 
