@@ -18,7 +18,7 @@ import java.util.List;
 @NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
 public class Clothes extends BaseUpdatableEntity {
 
-    @Column(nullable = false, length = 30)
+    @Column(nullable = false, length = 100)
     private String name;
 
     @Column(nullable = false, length = 30)

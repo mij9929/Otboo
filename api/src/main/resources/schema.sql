@@ -97,7 +97,7 @@ CREATE TABLE clothes (
                            id	uuid		NOT NULL,
                            created_at	timestamp		NOT NULL,
                            updated_at   timestamp   NULL,
-                           name	varchar(30)		NOT NULL,
+                           name	varchar(100)		NOT NULL,
                            type	varchar(30)		NOT NULL,
                            owner_id	uuid		NULL
 );
