@@ -116,10 +116,63 @@ class RecommendationLLMServiceImplTest {
         assertThat(candidateIds).doesNotContain(idOf(padding));
     }
 
+    @Test
+    @DisplayName("LLM 실패 시 fallback은 LLM 요청과 동일한 후보군을 기준으로 수행된다")
+    @SuppressWarnings("unchecked")
+    void recommend_llmFailure_passesCandidateClothesToFallback() {
+        UUID weatherId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        Clothes shortSleeve = clothes(ClothesType.TOP, "반팔티");
+        Clothes padding = clothes(ClothesType.OUTER, "패딩");
+        Weather weather = weather(28.0, PrecipitationType.NONE);
+        Profile profile = profile(3);
+
+        RecommendationContext context = new RecommendationContext(
+                weather,
+                profile,
+                List.of(shortSleeve, padding)
+        );
+        RecommendationResponse response = RecommendationResponse.builder()
+                .weatherId(weatherId)
+                .userId(userId)
+                .clothes(List.of())
+                .build();
+
+        RecommendationLLMServiceImpl service = new RecommendationLLMServiceImpl(
+                contextLoader,
+                llmRecommendationClient,
+                llmRecommendationValidator,
+                responseAssembler,
+                fallbackOutFitRecommender,
+                recommendationCandidateFilter,
+                weatherSuitabilityFilter
+        );
+
+        when(contextLoader.load(weatherId, userId)).thenReturn(context);
+        when(llmRecommendationClient.recommend(any()))
+                .thenThrow(new RuntimeException("LLM timeout"));
+        when(fallbackOutFitRecommender.recommend(any()))
+                .thenReturn(List.of(shortSleeve));
+        when(responseAssembler.assemble(eq(weatherId), eq(userId), any()))
+                .thenReturn(response);
+
+        service.recommend(weatherId, userId);
+
+        ArgumentCaptor<List<Clothes>> fallbackCandidatesCaptor =
+                ArgumentCaptor.forClass(List.class);
+        verify(fallbackOutFitRecommender).recommend(fallbackCandidatesCaptor.capture());
+
+        List<Clothes> fallbackCandidates = fallbackCandidatesCaptor.getValue();
+
+        assertThat(fallbackCandidates).contains(shortSleeve);
+        assertThat(fallbackCandidates).doesNotContain(padding);
+    }
+
     private Clothes clothes(ClothesType type, String name) {
         Clothes clothes = mock(Clothes.class);
         UUID id = UUID.randomUUID();
-        when(clothes.getId()).thenReturn(id);
+        lenient().when(clothes.getId()).thenReturn(id);
         when(clothes.getType()).thenReturn(type);
         when(clothes.getName()).thenReturn(name);
         lenient().when(clothes.getValues()).thenReturn(List.of());
