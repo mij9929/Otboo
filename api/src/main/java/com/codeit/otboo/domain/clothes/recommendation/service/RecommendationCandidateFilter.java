@@ -2,7 +2,6 @@ package com.codeit.otboo.domain.clothes.recommendation.service;
 
 import com.codeit.otboo.domain.clothes.management.entity.Clothes;
 import com.codeit.otboo.domain.clothes.management.entity.ClothesType;
-import com.codeit.otboo.domain.weather.entity.Weather;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -18,7 +17,7 @@ public class RecommendationCandidateFilter {
     private static final int SHOES_LIMIT = 5;
     private static final int ETC_LIMIT = 5;
 
-    public List<Clothes> filter(List<Clothes> clothes, Weather weather) {
+    public List<Clothes> filter(List<Clothes> clothes) {
         Map<ClothesType, List<Clothes>> grouped = clothes.stream()
                 .collect(Collectors.groupingBy(Clothes::getType));
 

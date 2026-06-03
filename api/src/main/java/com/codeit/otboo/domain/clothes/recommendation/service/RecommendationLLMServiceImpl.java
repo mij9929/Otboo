@@ -35,7 +35,7 @@ public class RecommendationLLMServiceImpl implements RecommendationService {
         List<Clothes> weatherSuitableClothes = weatherSuitabilityFilter.filter(context.clothes(), context.weather(), context.profile());
 
         List<Clothes> candidateClothes = recommendationCandidateFilter
-                .filter(weatherSuitableClothes, context.weather());
+                .filter(weatherSuitableClothes);
 
         if (candidateClothes.isEmpty()) {
             return responseAssembler.assemble(weatherId, userId, List.of());
