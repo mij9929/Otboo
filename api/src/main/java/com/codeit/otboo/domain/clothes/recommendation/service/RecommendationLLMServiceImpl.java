@@ -25,14 +25,17 @@ public class RecommendationLLMServiceImpl implements RecommendationService {
     private final RecommendationResponseAssembler responseAssembler;
     private final FallbackOutFitRecommender fallbackOutFitRecommender;
     private final RecommendationCandidateFilter recommendationCandidateFilter;
+    private final WeatherSuitabilityFilter weatherSuitabilityFilter;
 
     @Override
     @Transactional(readOnly = true)
     public RecommendationResponse recommend(UUID weatherId, UUID userId) {
         RecommendationContext context = contextLoader.load(weatherId, userId);
 
+        List<Clothes> weatherSuitableClothes = weatherSuitabilityFilter.filter(context.clothes(), context.weather(), context.profile());
+
         List<Clothes> candidateClothes = recommendationCandidateFilter
-                .filter(context.clothes(), context.weather());
+                .filter(weatherSuitableClothes, context.weather());
 
         List<OutfitCandidate> candidates
                 = candidateClothes.stream()
