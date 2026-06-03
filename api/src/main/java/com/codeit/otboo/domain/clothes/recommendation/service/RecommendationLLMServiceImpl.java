@@ -37,6 +37,10 @@ public class RecommendationLLMServiceImpl implements RecommendationService {
         List<Clothes> candidateClothes = recommendationCandidateFilter
                 .filter(weatherSuitableClothes, context.weather());
 
+        if (candidateClothes.isEmpty()) {
+            return responseAssembler.assemble(weatherId, userId, List.of());
+        }
+
         List<OutfitCandidate> candidates
                 = candidateClothes.stream()
                 .map(OutfitCandidate::from)
