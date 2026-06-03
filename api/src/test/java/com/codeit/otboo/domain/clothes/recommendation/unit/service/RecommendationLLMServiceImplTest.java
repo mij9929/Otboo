@@ -31,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.lenient;
@@ -169,6 +170,48 @@ class RecommendationLLMServiceImplTest {
         assertThat(fallbackCandidates).doesNotContain(padding);
     }
 
+    @Test
+    @DisplayName("후보가 비어 있으면 LLM과 fallback을 호출하지 않고 빈 응답을 조립한다")
+    void recommend_emptyCandidates_skipsLlmAndFallback() {
+        UUID weatherId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        Clothes padding = clothes(ClothesType.OUTER, "패딩");
+        Weather weather = weather(28.0, PrecipitationType.NONE);
+        Profile profile = profile(3);
+
+        RecommendationContext context = new RecommendationContext(
+                weather,
+                profile,
+                List.of(padding)
+        );
+        RecommendationResponse response = RecommendationResponse.builder()
+                .weatherId(weatherId)
+                .userId(userId)
+                .clothes(List.of())
+                .build();
+
+        RecommendationLLMServiceImpl service = new RecommendationLLMServiceImpl(
+                contextLoader,
+                llmRecommendationClient,
+                llmRecommendationValidator,
+                responseAssembler,
+                fallbackOutFitRecommender,
+                recommendationCandidateFilter,
+                weatherSuitabilityFilter
+        );
+
+        when(contextLoader.load(weatherId, userId)).thenReturn(context);
+        when(responseAssembler.assemble(weatherId, userId, List.of()))
+                .thenReturn(response);
+
+        service.recommend(weatherId, userId);
+
+        verify(llmRecommendationClient, never()).recommend(any());
+        verify(fallbackOutFitRecommender, never()).recommend(any());
+        verify(responseAssembler).assemble(weatherId, userId, List.of());
+    }
+
     private Clothes clothes(ClothesType type, String name) {
         Clothes clothes = mock(Clothes.class);
         UUID id = UUID.randomUUID();
@@ -182,7 +225,7 @@ class RecommendationLLMServiceImplTest {
     private Weather weather(double temperature, PrecipitationType precipitationType) {
         Weather weather = mock(Weather.class);
         when(weather.getTemperatureCurrent()).thenReturn(temperature);
-        when(weather.getPrecipitationType()).thenReturn(precipitationType);
+        lenient().when(weather.getPrecipitationType()).thenReturn(precipitationType);
         return weather;
     }
 
