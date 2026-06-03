@@ -9,7 +9,7 @@ import com.codeit.otboo.domain.clothes.recommendation.dto.internal.Recommendatio
 import com.codeit.otboo.domain.clothes.recommendation.dto.response.RecommendationResponse;
 import com.codeit.otboo.domain.clothes.recommendation.service.FallbackOutFitRecommender;
 import com.codeit.otboo.domain.clothes.recommendation.service.LlmRecommendationValidator;
-import com.codeit.otboo.domain.clothes.recommendation.service.RecommendationCandidateFilter;
+import com.codeit.otboo.domain.clothes.recommendation.service.RecommendationCandidateLimiter;
 import com.codeit.otboo.domain.clothes.recommendation.service.RecommendationContextLoader;
 import com.codeit.otboo.domain.clothes.recommendation.service.RecommendationLLMServiceImpl;
 import com.codeit.otboo.domain.clothes.recommendation.service.RecommendationResponseAssembler;
@@ -54,8 +54,8 @@ class RecommendationLLMServiceImplTest {
     @Mock
     private FallbackOutFitRecommender fallbackOutFitRecommender;
 
-    private final RecommendationCandidateFilter recommendationCandidateFilter =
-            new RecommendationCandidateFilter();
+    private final RecommendationCandidateLimiter recommendationCandidateLimiter =
+            new RecommendationCandidateLimiter();
 
     private final WeatherSuitabilityFilter weatherSuitabilityFilter =
             new WeatherSuitabilityFilter();
@@ -92,7 +92,7 @@ class RecommendationLLMServiceImplTest {
                 llmRecommendationValidator,
                 responseAssembler,
                 fallbackOutFitRecommender,
-                recommendationCandidateFilter,
+                recommendationCandidateLimiter,
                 weatherSuitabilityFilter
         );
 
@@ -146,7 +146,7 @@ class RecommendationLLMServiceImplTest {
                 llmRecommendationValidator,
                 responseAssembler,
                 fallbackOutFitRecommender,
-                recommendationCandidateFilter,
+                recommendationCandidateLimiter,
                 weatherSuitabilityFilter
         );
 
@@ -197,7 +197,7 @@ class RecommendationLLMServiceImplTest {
                 llmRecommendationValidator,
                 responseAssembler,
                 fallbackOutFitRecommender,
-                recommendationCandidateFilter,
+                recommendationCandidateLimiter,
                 weatherSuitabilityFilter
         );
 

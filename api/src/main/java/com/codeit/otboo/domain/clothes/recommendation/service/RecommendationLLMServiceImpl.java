@@ -24,7 +24,7 @@ public class RecommendationLLMServiceImpl implements RecommendationService {
     private final LlmRecommendationValidator llmRecommendationValidator;
     private final RecommendationResponseAssembler responseAssembler;
     private final FallbackOutFitRecommender fallbackOutFitRecommender;
-    private final RecommendationCandidateFilter recommendationCandidateFilter;
+    private final RecommendationCandidateLimiter recommendationCandidateLimiter;
     private final WeatherSuitabilityFilter weatherSuitabilityFilter;
 
     @Override
@@ -34,8 +34,8 @@ public class RecommendationLLMServiceImpl implements RecommendationService {
 
         List<Clothes> weatherSuitableClothes = weatherSuitabilityFilter.filter(context.clothes(), context.weather(), context.profile());
 
-        List<Clothes> candidateClothes = recommendationCandidateFilter
-                .filter(weatherSuitableClothes);
+        List<Clothes> candidateClothes = recommendationCandidateLimiter
+                .limit(weatherSuitableClothes);
 
         if (candidateClothes.isEmpty()) {
             return responseAssembler.assemble(weatherId, userId, List.of());
