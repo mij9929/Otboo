@@ -61,7 +61,7 @@ public class RecommendationLLMServiceImpl implements RecommendationService {
 
         } catch (RuntimeException e) {
             log.warn("LLM 추천 실패 - Fallback 처리, userId = {}, weatherId = {}", userId, weatherId, e);
-            selectedClothes = fallbackOutFitRecommender.recommend(context.clothes());
+            selectedClothes = fallbackOutFitRecommender.recommend(candidateClothes);
         }
 
         return responseAssembler.assemble(
