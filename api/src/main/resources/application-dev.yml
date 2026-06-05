@@ -87,4 +87,4 @@ otboo:
       base-url: https://openrouter.ai/api/v1
       api-key: ${RECOMMENDATION_LLM_API_KEY}
       model: openrouter/free
-      timeout-seconds: 10
+      timeout-seconds: 30
