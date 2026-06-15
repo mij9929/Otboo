@@ -24,15 +24,31 @@ public class RecommendationLLMServiceImpl implements RecommendationService {
     private final LlmRecommendationValidator llmRecommendationValidator;
     private final RecommendationResponseAssembler responseAssembler;
     private final FallbackOutFitRecommender fallbackOutFitRecommender;
-    private final RecommendationCandidateFilter recommendationCandidateFilter;
+    private final RecommendationCandidateLimiter recommendationCandidateLimiter;
+    private final WeatherSuitabilityFilter weatherSuitabilityFilter;
 
     @Override
     @Transactional(readOnly = true)
     public RecommendationResponse recommend(UUID weatherId, UUID userId) {
+        long totalStartTime = System.currentTimeMillis();
         RecommendationContext context = contextLoader.load(weatherId, userId);
 
-        List<Clothes> candidateClothes = recommendationCandidateFilter
-                .filter(context.clothes(), context.weather());
+        List<Clothes> weatherSuitableClothes = weatherSuitabilityFilter.filter(context.clothes(), context.weather(), context.profile());
+
+        List<Clothes> candidateClothes = recommendationCandidateLimiter
+                .limit(weatherSuitableClothes);
+        int candidateCount = candidateClothes.size();
+
+        if (candidateClothes.isEmpty()) {
+            RecommendationResponse response = responseAssembler.assemble(weatherId, userId, List.of());
+            long totalElapsedMs = System.currentTimeMillis() - totalStartTime;
+            log.info(
+                    "LLM recommendation skipped. candidateCount={}, selectedCount=0, llmElapsedMs=0, totalElapsedMs={}, fallback=false, exceptionType=none, reason=no_candidates",
+                    candidateCount,
+                    totalElapsedMs
+            );
+            return response;
+        }
 
         List<OutfitCandidate> candidates
                 = candidateClothes.stream()
@@ -42,12 +58,18 @@ public class RecommendationLLMServiceImpl implements RecommendationService {
         log.debug("candidates : {}", candidates );
 
         List<Clothes> selectedClothes;
+        long llmElapsedMs = 0;
+        long llmStartTime = 0;
+        boolean fallback = false;
+        String exceptionType = "none";
 
         try{
             LlmRecommendationRequest llmRecommendationRequest = LlmRecommendationRequest.from(context, candidates);
             log.debug("llmRecommendationRequest : {}", llmRecommendationRequest );
 
+            llmStartTime = System.currentTimeMillis();
             LlmRecommendationResponse llmRecommendationResponse = llmRecommendationClient.recommend(llmRecommendationRequest);
+            llmElapsedMs = System.currentTimeMillis() - llmStartTime;
             log.debug("llmRecommendationResponse : {}", llmRecommendationResponse);
 
             selectedClothes =
@@ -57,15 +79,43 @@ public class RecommendationLLMServiceImpl implements RecommendationService {
                     );
 
         } catch (RuntimeException e) {
-            log.warn("LLM 추천 실패 - Fallback 처리, userId = {}, weatherId = {}", userId, weatherId, e);
-            selectedClothes = fallbackOutFitRecommender.recommend(context.clothes());
+            fallback = true;
+            exceptionType = e.getClass().getSimpleName();
+            if (llmStartTime > 0 && llmElapsedMs == 0) {
+                llmElapsedMs = System.currentTimeMillis() - llmStartTime;
+            }
+            log.warn(
+                    "LLM 추천 실패 - Fallback 처리. exceptionType={}",
+                    exceptionType
+            );
+            selectedClothes = fallbackOutFitRecommender.recommend(candidateClothes);
         }
 
-        return responseAssembler.assemble(
+        RecommendationResponse response = responseAssembler.assemble(
                 weatherId,
                 userId,
                 selectedClothes
         );
+        long totalElapsedMs = System.currentTimeMillis() - totalStartTime;
+        if (fallback) {
+            log.info(
+                    "LLM recommendation fallback. candidateCount={}, selectedCount={}, llmElapsedMs={}, totalElapsedMs={}, fallback=true, exceptionType={}, reason=fallback",
+                    candidateCount,
+                    selectedClothes.size(),
+                    llmElapsedMs,
+                    totalElapsedMs,
+                    exceptionType
+            );
+        } else {
+            log.info(
+                    "LLM recommendation completed. candidateCount={}, selectedCount={}, llmElapsedMs={}, totalElapsedMs={}, fallback=false, exceptionType=none, reason=success",
+                    candidateCount,
+                    selectedClothes.size(),
+                    llmElapsedMs,
+                    totalElapsedMs
+            );
+        }
+        return response;
 
     }
 }

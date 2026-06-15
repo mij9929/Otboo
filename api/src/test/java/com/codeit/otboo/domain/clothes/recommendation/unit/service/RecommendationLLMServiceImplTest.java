@@ -1,0 +1,241 @@
+package com.codeit.otboo.domain.clothes.recommendation.unit.service;
+
+import com.codeit.otboo.domain.clothes.management.entity.Clothes;
+import com.codeit.otboo.domain.clothes.management.entity.ClothesType;
+import com.codeit.otboo.domain.clothes.recommendation.ai.LlmRecommendationClient;
+import com.codeit.otboo.domain.clothes.recommendation.dto.internal.LlmRecommendationRequest;
+import com.codeit.otboo.domain.clothes.recommendation.dto.internal.LlmRecommendationResponse;
+import com.codeit.otboo.domain.clothes.recommendation.dto.internal.RecommendationContext;
+import com.codeit.otboo.domain.clothes.recommendation.dto.response.RecommendationResponse;
+import com.codeit.otboo.domain.clothes.recommendation.service.FallbackOutFitRecommender;
+import com.codeit.otboo.domain.clothes.recommendation.service.LlmRecommendationValidator;
+import com.codeit.otboo.domain.clothes.recommendation.service.RecommendationCandidateLimiter;
+import com.codeit.otboo.domain.clothes.recommendation.service.RecommendationContextLoader;
+import com.codeit.otboo.domain.clothes.recommendation.service.RecommendationLLMServiceImpl;
+import com.codeit.otboo.domain.clothes.recommendation.service.RecommendationResponseAssembler;
+import com.codeit.otboo.domain.clothes.recommendation.service.WeatherSuitabilityFilter;
+import com.codeit.otboo.domain.profile.entity.Profile;
+import com.codeit.otboo.domain.weather.entity.PrecipitationType;
+import com.codeit.otboo.domain.weather.entity.Weather;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.List;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.lenient;
+
+@ExtendWith(MockitoExtension.class)
+class RecommendationLLMServiceImplTest {
+
+    @Mock
+    private RecommendationContextLoader contextLoader;
+
+    @Mock
+    private LlmRecommendationClient llmRecommendationClient;
+
+    @Mock
+    private LlmRecommendationValidator llmRecommendationValidator;
+
+    @Mock
+    private RecommendationResponseAssembler responseAssembler;
+
+    @Mock
+    private FallbackOutFitRecommender fallbackOutFitRecommender;
+
+    private final RecommendationCandidateLimiter recommendationCandidateLimiter =
+            new RecommendationCandidateLimiter();
+
+    private final WeatherSuitabilityFilter weatherSuitabilityFilter =
+            new WeatherSuitabilityFilter();
+
+    @Test
+    @DisplayName("LLM 요청 후보에는 날씨 필터를 통과한 옷만 포함된다")
+    void recommend_passesWeatherSuitableCandidatesToLlm() {
+        UUID weatherId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        Clothes shortSleeve = clothes(ClothesType.TOP, "반팔티");
+        Clothes padding = clothes(ClothesType.OUTER, "패딩");
+        Weather weather = weather(28.0, PrecipitationType.NONE);
+        Profile profile = profile(3);
+
+        RecommendationContext context = new RecommendationContext(
+                weather,
+                profile,
+                List.of(shortSleeve, padding)
+        );
+        LlmRecommendationResponse llmResponse = new LlmRecommendationResponse(
+                List.of(idOf(shortSleeve)),
+                "더운 날씨에 맞는 추천입니다."
+        );
+        RecommendationResponse response = RecommendationResponse.builder()
+                .weatherId(weatherId)
+                .userId(userId)
+                .clothes(List.of())
+                .build();
+
+        RecommendationLLMServiceImpl service = new RecommendationLLMServiceImpl(
+                contextLoader,
+                llmRecommendationClient,
+                llmRecommendationValidator,
+                responseAssembler,
+                fallbackOutFitRecommender,
+                recommendationCandidateLimiter,
+                weatherSuitabilityFilter
+        );
+
+        when(contextLoader.load(weatherId, userId)).thenReturn(context);
+        when(llmRecommendationClient.recommend(any())).thenReturn(llmResponse);
+        when(llmRecommendationValidator.validate(eq(llmResponse), any()))
+                .thenReturn(List.of(shortSleeve));
+        when(responseAssembler.assemble(weatherId, userId, List.of(shortSleeve)))
+                .thenReturn(response);
+
+        service.recommend(weatherId, userId);
+
+        ArgumentCaptor<LlmRecommendationRequest> requestCaptor =
+                ArgumentCaptor.forClass(LlmRecommendationRequest.class);
+        verify(llmRecommendationClient).recommend(requestCaptor.capture());
+
+        List<UUID> candidateIds = requestCaptor.getValue().candidates().stream()
+                .map(candidate -> candidate.clothesId())
+                .toList();
+
+        assertThat(candidateIds).contains(idOf(shortSleeve));
+        assertThat(candidateIds).doesNotContain(idOf(padding));
+    }
+
+    @Test
+    @DisplayName("LLM 실패 시 fallback은 LLM 요청과 동일한 후보군을 기준으로 수행된다")
+    @SuppressWarnings("unchecked")
+    void recommend_llmFailure_passesCandidateClothesToFallback() {
+        UUID weatherId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        Clothes shortSleeve = clothes(ClothesType.TOP, "반팔티");
+        Clothes padding = clothes(ClothesType.OUTER, "패딩");
+        Weather weather = weather(28.0, PrecipitationType.NONE);
+        Profile profile = profile(3);
+
+        RecommendationContext context = new RecommendationContext(
+                weather,
+                profile,
+                List.of(shortSleeve, padding)
+        );
+        RecommendationResponse response = RecommendationResponse.builder()
+                .weatherId(weatherId)
+                .userId(userId)
+                .clothes(List.of())
+                .build();
+
+        RecommendationLLMServiceImpl service = new RecommendationLLMServiceImpl(
+                contextLoader,
+                llmRecommendationClient,
+                llmRecommendationValidator,
+                responseAssembler,
+                fallbackOutFitRecommender,
+                recommendationCandidateLimiter,
+                weatherSuitabilityFilter
+        );
+
+        when(contextLoader.load(weatherId, userId)).thenReturn(context);
+        when(llmRecommendationClient.recommend(any()))
+                .thenThrow(new RuntimeException("LLM timeout"));
+        when(fallbackOutFitRecommender.recommend(any()))
+                .thenReturn(List.of(shortSleeve));
+        when(responseAssembler.assemble(eq(weatherId), eq(userId), any()))
+                .thenReturn(response);
+
+        service.recommend(weatherId, userId);
+
+        ArgumentCaptor<List<Clothes>> fallbackCandidatesCaptor =
+                ArgumentCaptor.forClass(List.class);
+        verify(fallbackOutFitRecommender).recommend(fallbackCandidatesCaptor.capture());
+
+        List<Clothes> fallbackCandidates = fallbackCandidatesCaptor.getValue();
+
+        assertThat(fallbackCandidates).contains(shortSleeve);
+        assertThat(fallbackCandidates).doesNotContain(padding);
+    }
+
+    @Test
+    @DisplayName("후보가 비어 있으면 LLM과 fallback을 호출하지 않고 빈 응답을 조립한다")
+    void recommend_emptyCandidates_skipsLlmAndFallback() {
+        UUID weatherId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        Clothes padding = clothes(ClothesType.OUTER, "패딩");
+        Weather weather = weather(28.0, PrecipitationType.NONE);
+        Profile profile = profile(3);
+
+        RecommendationContext context = new RecommendationContext(
+                weather,
+                profile,
+                List.of(padding)
+        );
+        RecommendationResponse response = RecommendationResponse.builder()
+                .weatherId(weatherId)
+                .userId(userId)
+                .clothes(List.of())
+                .build();
+
+        RecommendationLLMServiceImpl service = new RecommendationLLMServiceImpl(
+                contextLoader,
+                llmRecommendationClient,
+                llmRecommendationValidator,
+                responseAssembler,
+                fallbackOutFitRecommender,
+                recommendationCandidateLimiter,
+                weatherSuitabilityFilter
+        );
+
+        when(contextLoader.load(weatherId, userId)).thenReturn(context);
+        when(responseAssembler.assemble(weatherId, userId, List.of()))
+                .thenReturn(response);
+
+        service.recommend(weatherId, userId);
+
+        verify(llmRecommendationClient, never()).recommend(any());
+        verify(fallbackOutFitRecommender, never()).recommend(any());
+        verify(responseAssembler).assemble(weatherId, userId, List.of());
+    }
+
+    private Clothes clothes(ClothesType type, String name) {
+        Clothes clothes = mock(Clothes.class);
+        UUID id = UUID.randomUUID();
+        lenient().when(clothes.getId()).thenReturn(id);
+        when(clothes.getType()).thenReturn(type);
+        when(clothes.getName()).thenReturn(name);
+        lenient().when(clothes.getValues()).thenReturn(List.of());
+        return clothes;
+    }
+
+    private Weather weather(double temperature, PrecipitationType precipitationType) {
+        Weather weather = mock(Weather.class);
+        when(weather.getTemperatureCurrent()).thenReturn(temperature);
+        lenient().when(weather.getPrecipitationType()).thenReturn(precipitationType);
+        return weather;
+    }
+
+    private Profile profile(int temperatureSensitivity) {
+        Profile profile = mock(Profile.class);
+        when(profile.getTemperatureSensitivity()).thenReturn(temperatureSensitivity);
+        return profile;
+    }
+
+    private UUID idOf(Clothes clothes) {
+        return clothes.getId();
+    }
+}
